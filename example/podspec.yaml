@@ -3,7 +3,7 @@ localization:
 
 ext:
 - extensions.blacklist.BlacklistExtension:
-    blacklist:
+    blacklist@env.prod:
     - frisbee
 
 deployments:
