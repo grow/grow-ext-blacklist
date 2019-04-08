@@ -1,0 +1,19 @@
+localization:
+  default_locale: en
+
+ext:
+- extensions.blacklist.BlacklistExtension:
+    blacklist:
+    - frisbee
+
+deployments:
+  staging:
+    destination: local
+    out_dir: build/
+    env:
+      name: staging
+  prod:
+    destination: local
+    out_dir: build/
+    env:
+      name: prod
