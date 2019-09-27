@@ -16,21 +16,24 @@ class BlacklistError(Error):
     pass
 
 
-class BlacklistPostRenderHook(hooks.PostRenderHook):
-    """Handle the post-render hook."""
+class BlacklistPreDeployHook(hooks.PreDeployHook):
+    """Handle the pre deplow hook."""
 
-    def trigger(self, previous_result, doc, raw_content, *_args, **_kwargs):
-        """Execute post-render modification."""
+    def trigger(self, previous_result, rendered_doc, command, *_args, **_kwargs):
+        """Execute pre deploy validation."""
+        if not self.extension.blacklist:
+            return previous_result
+        commands = tuple(self.extension.config.get('commands', ['build', 'deploy', 'stage',]))
         extensions = tuple(self.extension.config.get('extensions', ['.html',]))
-        if not isinstance(doc, document.Document) or not doc.view.endswith(extensions):
+        if command not in commands or not rendered_doc.path.endswith(extensions):
             return previous_result
 
-        content = previous_result if previous_result else raw_content
+        content = rendered_doc.read()
         for term in self.extension.blacklist:
             if term['pattern'].search(content):
                 raise BlacklistError('Blacklisted term found in {}: {}'.format(
-                    doc.pod_path, term['term']))
-        return content
+                    rendered_doc.path, term['term']))
+        return previous_result
 
 
 class BlacklistExtension(extensions.BaseExtension):
@@ -60,4 +63,4 @@ class BlacklistExtension(extensions.BaseExtension):
     @property
     def available_hooks(self):
         """Returns the available hook classes."""
-        return [BlacklistPostRenderHook]
+        return [BlacklistPreDeployHook]
