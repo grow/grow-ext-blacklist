@@ -5,6 +5,8 @@ ext:
 - extensions.blacklist.BlacklistExtension:
     blacklist@env.prod:
     - frisbee
+    warning@env.staging:
+    - frisbee
 
 deployments:
   staging:
