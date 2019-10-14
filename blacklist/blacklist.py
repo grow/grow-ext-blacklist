@@ -6,6 +6,9 @@ from grow.extensions import hooks
 from grow.documents import document
 
 
+SNIPPET_SIZE = 60
+
+
 class Error(Exception):
     """General blacklist error."""
     pass
@@ -30,9 +33,14 @@ class BlacklistPreDeployHook(hooks.PreDeployHook):
 
         content = rendered_doc.read()
         for term in self.extension.blacklist:
-            if term['pattern'].search(content):
-                raise BlacklistError('Blacklisted term found in {}: {}'.format(
-                    rendered_doc.path, term['term']))
+            search_result = term['pattern'].search(content)
+            if search_result:
+                snippet_start = max(0, search_result.start(0) - SNIPPET_SIZE)
+                snippet_end = min(
+                    len(search_result.string), search_result.end(0) + SNIPPET_SIZE)
+                snippet = search_result.string[snippet_start:snippet_end]
+                raise BlacklistError('Blacklisted term ({term}) found in {path}: \n{snippet}'.format(
+                    path=rendered_doc.path, term=term['term'], snippet=snippet))
         return previous_result
 
 
