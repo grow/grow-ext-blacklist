@@ -3,10 +3,9 @@ localization:
 
 ext:
 - extensions.blacklist.BlacklistExtension:
-    blacklist@env.prod:
+    blacklist:
     - frisbee
-    warning@env.staging:
-    - frisbee
+    raise_error@env.staging: false
 
 deployments:
   staging:

@@ -39,13 +39,15 @@ class BlacklistPreDeployHook(hooks.PreDeployHook):
                 })
         return snippets
 
-
     def trigger(self, previous_result, rendered_doc, command, *_args, **_kwargs):
         """Execute pre deploy validation."""
-        if not self.extension.blacklist and not self.extension.warnings:
+        if not self.extension.blacklist:
             return previous_result
-        commands = tuple(self.extension.config.get('commands', ['build', 'deploy', 'stage',]))
-        extensions = tuple(self.extension.config.get('extensions', ['.html',]))
+        commands = tuple(self.extension.config.get(
+            'commands', ['build', 'deploy', 'stage', ]))
+        raise_error = self.extension.config.get('raise_error', True)
+        extensions = tuple(self.extension.config.get(
+            'extensions', ['.html', ]))
         if command not in commands or not rendered_doc.path.endswith(extensions):
             return previous_result
 
@@ -54,13 +56,12 @@ class BlacklistPreDeployHook(hooks.PreDeployHook):
         # Test for blacklist violation.
         results = self._term_list_snippets(self.extension.blacklist, content)
         if results:
-            raise BlacklistError(
-                'Blacklisted term ({term}) found in {path}: \n{snippet}'.format(
-                    path=rendered_doc.path, term=results[0]['term'], snippet=results[0]['snippet']))
+            if raise_error:
+                raise BlacklistError(
+                    'Blacklisted term ({term}) found in {path}: \n{snippet}'.format(
+                        path=rendered_doc.path, term=results[0]['term'], snippet=results[0]['snippet']))
 
-        # Log the warnings for the warnings list.
-        results = self._term_list_snippets(self.extension.warnings, content)
-        if results:
+            # Log the warnings when not raising errors.
             for result in results:
                 self.pod.logger.warning('Blacklist warning term ({term}) found in {path}: \n{snippet}'.format(
                     path=rendered_doc.path, term=result['term'], snippet=result['snippet']))
@@ -96,8 +97,6 @@ class BlacklistExtension(extensions.BaseExtension):
         self._config = config
         blacklist_terms = config.get('blacklist', [])
         self.blacklist = self._parse_config_patterns(blacklist_terms)
-        warning_terms = config.get('warning', [])
-        self.warnings = self._parse_config_patterns(warning_terms)
 
     @property
     def available_hooks(self):
