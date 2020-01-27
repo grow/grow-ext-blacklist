@@ -1,1 +1,1 @@
-from blacklist import *
+from .blacklist import BlacklistExtension
